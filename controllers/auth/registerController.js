@@ -1,3 +1,4 @@
+import finalResponce from '../../services/finalResponce'
 import Joi from 'joi';
 import { User, RefreshToken } from '../../models';
 import bcrypt from 'bcrypt';
@@ -33,23 +34,13 @@ const registerController = {
                     'string.empty': `email cannot be empty`,
                     'any.required': `email is a required field`,
                 }),
-            password: joiPassword.string()
-                .minOfSpecialCharacters(1)
-                .minOfLowercase(1)
-                .minOfUppercase(1)
-                .minOfNumeric(1)
-                .noWhiteSpaces()
-                .required()
-                .messages({
-                    'password.minOfUppercase': 'password should contain at least {#min} uppercase character',
-                    'password.minOfSpecialCharacters': 'password should contain at least {#min} special character',
-                    'password.minOfLowercase': 'password should contain at least {#min} lowercase character',
-                    'password.minOfNumeric': 'password should contain at least {#min} numeric character',
-                    'password.noWhiteSpaces': 'password should not contain white spaces',
-                    'password.required': 'password must be required',
-                    'string.empty': 'password cannot be empty',
-                }),
-            confirm_Password: Joi.ref('password')
+            password: Joi.string().min(3).max(30).required()
+            .messages({
+                'string.empty': `password cannot be an empty field`,
+                'string.min': `password should have a minimum length of {#limit}`,
+                'any.required': `password is a required field`,
+            }),
+            confirmPassword: Joi.ref('password')
         });
         const { error } = registerSchema.validate(req.body);
         if (error) {
@@ -60,7 +51,7 @@ const registerController = {
         try {
             const exist = await User.exists({ email: req.body.email });
             if (exist) {
-                return next(CustomErrorHandler.alreadyExist('This email is already taken.'));
+                return next(CustomErrorHandler.alreadyExist('Email Id already taken'));
             }
         } catch (err) {
             return next(err);
@@ -90,8 +81,7 @@ const registerController = {
         } catch (err) {
             return next(err);
         }
-
-        res.json({ access_token, refresh_token });
+        res.status(201).json(finalResponce("Register Successfully"));
     }
 }
 

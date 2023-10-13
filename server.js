@@ -4,9 +4,10 @@ import express from 'express';
 import routes from './routes';
 import path from 'path';
 import cors from 'cors';
+import { APP_PORT } from './config';
 const app = express();
-
 dbConnection();
+
 global.appRoot = path.resolve(__dirname);
 
 app.use(cors());

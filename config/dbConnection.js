@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { DB_URL, DB_NAME } from './config';
+import { DB_URL, DB_NAME } from '../config';
 
 // Database connection
 export default function dbConnection() {

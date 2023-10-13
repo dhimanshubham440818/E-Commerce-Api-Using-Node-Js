@@ -12,10 +12,10 @@ router.post('/logout', auth, loginController.logout);
 
 router.post('/products/cart-items', productController.getProducts);
 
-router.post('/products', [auth, admin], productController.store);
+router.post('/products', [auth, admin], productController.add);
+router.get('/products', productController.products);
 router.put('/products/:id', [auth, admin], productController.update);
 router.delete('/products/:id', [auth, admin], productController.destroy);
-router.get('/products', productController.index);
-router.get('/products/:id', productController.show);
+router.get('/products/:id', productController.single);
 
 export default router;

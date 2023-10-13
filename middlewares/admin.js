@@ -7,10 +7,10 @@ const admin = async (req, res, next) => {
         if (user.role === 'admin') {
             next();
         } else {
-            return next(CustomErrorHandler.unAuthorized());
+            return next(CustomErrorHandler.unAuthorized('Unauthorized User'));
         }
     } catch (err) {
-        return next(CustomErrorHandler.serverError(err.message));
+        return next(CustomErrorHandler.serverError(err));
     }
 };
 

@@ -1,3 +1,4 @@
+import finalResponce from '../../services/finalResponce'
 import Joi from 'joi';
 import { User, RefreshToken } from '../../models';
 import CustomErrorHandler from '../../services/CustomErrorHandler';
@@ -16,21 +17,11 @@ const loginController = {
                     'string.empty': `email cannot be empty`,
                     'any.required': `email is a required field`,
                 }),
-            password: joiPassword.string()
-                .minOfSpecialCharacters(1)
-                .minOfLowercase(1)
-                .minOfUppercase(1)
-                .minOfNumeric(1)
-                .noWhiteSpaces()
-                .required()
+                password: Joi.string().min(3).max(30).required()
                 .messages({
-                    'password.minOfUppercase': 'password should contain at least {#min} uppercase character',
-                    'password.minOfSpecialCharacters': 'password should contain at least {#min} special character',
-                    'password.minOfLowercase': 'password should contain at least {#min} lowercase character',
-                    'password.minOfNumeric': 'password should contain at least {#min} numeric character',
-                    'password.noWhiteSpaces': 'password should not contain white spaces',
-                    'password.required': 'password must be required',
-                    'string.empty': 'password cannot be empty',
+                    'string.empty': `password cannot be an empty field`,
+                    'string.min': `password should have a minimum length of {#limit}`,
+                    'any.required': `password is a required field`,
                 }),
         });
 
@@ -42,13 +33,13 @@ const loginController = {
         try {
             const user = await User.findOne({ email: req.body.email });
             if (!user) {
-                return next(CustomErrorHandler.wrongCredentials());
+                return next(CustomErrorHandler.wrongCredentials('wrong Credentials'));
             }
 
             // compare the password
             const match = await bcrypt.compare(req.body.password, user.password);
             if (!match) {
-                return next(CustomErrorHandler.wrongCredentials());
+                return next(CustomErrorHandler.wrongCredentials('wrong Credentials'));
             }
 
             // Token
@@ -57,8 +48,8 @@ const loginController = {
         
             // database whitelist
             await RefreshToken.create({ token: refresh_token });
-            res.json({ access_token, refresh_token });
-
+            let token = {access_token , refresh_token, role:user.role , name:user.name }
+            res.status(200).json(finalResponce(token));
         } catch(err) {
             return next(err);
         }
@@ -81,7 +72,7 @@ const loginController = {
         } catch(err) {
             return next(new Error('Something went wrong in the database'));
         }
-        res.json({ status: 1 });
+        res.json({ status: true, error:false, messages:'Successfully Logout'});
     }
 };
 

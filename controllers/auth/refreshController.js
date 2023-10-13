@@ -34,7 +34,7 @@ const refreshController = {
 
             const user = await User.findOne({ _id: userId });
             if (!user) {
-                return next(CustomErrorHandler.unAuthorized('No user found!'));
+                return next(CustomErrorHandler.unAuthorized('No User Found'));
             }
 
             // Tokens
@@ -46,7 +46,7 @@ const refreshController = {
             res.json({ access_token, refresh_token });
 
         } catch (err) {
-            return next(new Error('Something went wrong ' + err.message));
+            return next(new Error(err));
         }
 
     }

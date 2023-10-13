@@ -1,3 +1,4 @@
+import finalResponce from '../services/finalResponce'
 import { Product } from '../models';
 import multer from 'multer';
 import path from 'path';
@@ -19,56 +20,58 @@ const storage = multer.diskStorage({
 
 const handleMultipartData = multer({
     storage,
-    limits: { fileSize: 1000000 * 5 },
+    limits: { fileSize: 1000000 * 10 },
 }).single('image'); // 5mb
 
 
 const productController = {
-    async store(req, res, next) {
+    async add(req, res, next) {
       
         // Multipart form data
         handleMultipartData(req, res, async (err) => {
             if (err) {
-                return next(CustomErrorHandler.serverError(err.message));
+                return next(CustomErrorHandler.serverError((err)));
             }
             const filePath = req.file.path;
            
             // validation
-            const { error } = productSchema.validate(req.body);
+            const data = JSON.parse(req.body.data);
+            const { error } = productSchema.validate(data);
             if (error) {
                 // Delete the uploaded file
                 fs.unlink(`${appRoot}/${filePath}`, (err) => {
                     if (err) {
                         return next(
-                            CustomErrorHandler.serverError(err.message)
+                            CustomErrorHandler.serverError((err))
                         );
                     }
                 });
-
-                return next(error);
+                return next((error));
                 // rootfolder/uploads/filename.png
             }
 
-            const { name, price, size } = req.body;
+            const { name, price, size, category, description } = data;
             let document;
             try {
                 document = await Product.create({
                     name,
                     price,
                     size,
+                    category,
+                    description,
                     image: filePath,
                 });
             } catch (err) {
-                return next(err);
+                return next((err));
             }
-            res.status(201).json(document);
+            res.status(201).json(finalResponce(document));
         });
     },
 
-    update(req, res, next) {
+    async update(req, res, next) {
         handleMultipartData(req, res, async (err) => {
             if (err) {
-                return next(CustomErrorHandler.serverError(err.message));
+                return next(CustomErrorHandler.serverError((err)));
             }
             let filePath;
             if (req.file) {
@@ -76,24 +79,27 @@ const productController = {
             }
 
             // validation
-            const { error } = productSchema.validate(req.body);
+            
+            const data=JSON.parse(req.body.data);
+            data.image='defaultvalue';
+            const { error } = productSchema.validate(data);
             if (error) {
                 // Delete the uploaded file
                 if (req.file) {
                     fs.unlink(`${appRoot}/${filePath}`, (err) => {
                         if (err) {
                             return next(
-                                CustomErrorHandler.serverError(err.message)
+                                CustomErrorHandler.serverError((err))
                             );
                         }
                     });
                 }
 
-                return next(error);
+                return next((error));
                 // rootfolder/uploads/filename.png
             }
 
-            const { name, price, size } = req.body;
+            const { name, price, size, category, description } = data;
             let document;
             try {
                 document = await Product.findOneAndUpdate(
@@ -102,21 +108,23 @@ const productController = {
                         name,
                         price,
                         size,
+                        category,
+                        description,
                         ...(req.file && { image: filePath }),
                     },
                     { new: true }
                 );
             } catch (err) {
-                return next(err);
+                return next((err));
             }
-            res.status(201).json(document);
+            res.status(201).json(finalResponce(document));
         });
     },
 
     async destroy(req, res, next) {
         const document = await Product.findOneAndRemove({ _id: req.params.id });
         if (!document) {
-            return next(new Error('Nothing to delete'));
+            return next(new Error(('Nothing to delete')));
         }
 
         // image delete
@@ -125,13 +133,13 @@ const productController = {
         // approot/http://localhost:5000/uploads/1616444052539-425006577.png
         fs.unlink(`${appRoot}/${imagePath}`, (err) => {
             if (err) {
-                return next(CustomErrorHandler.serverError());
+                return next(CustomErrorHandler.serverError((err)));
             }
-            return res.json(document);
+            return res.status(200).json(finalResponce(document));
         });
     },
 
-    async index(req, res, next) {
+    async products(req, res, next) {
         let documents;
         // pagination mongoose-pagination
         try {
@@ -139,20 +147,21 @@ const productController = {
                 .select('-updatedAt -__v')
                 .sort({ _id: -1 });
         } catch (err) {
-            return next(CustomErrorHandler.serverError());
+            return next(CustomErrorHandler.serverError((err)));
         }
-        return res.json(documents);
+        return res.status(200).json(finalResponce(documents));
     },
-    async show(req, res, next) {
+
+    async single(req, res, next) {
         let document;
         try {
             document = await Product.findOne({ _id: req.params.id }).select(
                 '-updatedAt -__v'
             );
         } catch (err) {
-            return next(CustomErrorHandler.serverError());
+            return next(CustomErrorHandler.serverError((err)));
         }
-        return res.json(document);
+        return res.status(200).json(finalResponce((document)));
     },
     
     async getProducts(req, res, next) {
@@ -162,9 +171,9 @@ const productController = {
                 _id: { $in: req.body.ids },
             }).select('-updatedAt -__v');
         } catch (err) {
-            return next(CustomErrorHandler.serverError());
+            return next(CustomErrorHandler.serverError((err)));
         }
-        return res.json(documents);
+        return res.status(200).json(finalResponce((documents)));
     },
 };
 
